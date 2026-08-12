@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebShare — share files on your network</title>
+  <link rel="stylesheet" href="vendor/bootstrap.min.css">
+  <link rel="stylesheet" href="vendor/bootstrap-icons.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-body-tertiary">
+  <header class="app-header border-bottom bg-body">
+    <div class="container py-3 d-flex align-items-center gap-3">
+      <div class="brand-icon d-flex align-items-center justify-content-center">
+        <i class="bi bi-share-fill" aria-hidden="true"></i>
+      </div>
+      <div>
+        <h1 class="h4 mb-0">WebShare</h1>
+        <p class="text-muted small mb-0">Drop a file, share it on your network</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container py-4">
+    <div class="row g-4">
+      <section class="col-lg-7" aria-label="Upload files">
+        <div class="card shadow-sm h-100">
+          <div class="card-body d-flex flex-column">
+            <div id="drop-zone" class="drop-zone flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center" role="button" tabindex="0" aria-label="Upload files: drag and drop here, or press Enter to browse">
+              <i class="bi bi-cloud-arrow-up drop-icon" aria-hidden="true"></i>
+              <p class="lead mb-1">Drag &amp; drop files here</p>
+              <p class="text-muted small mb-3">or</p>
+              <button type="button" id="browse-btn" class="btn btn-primary">
+                <i class="bi bi-folder2-open me-1" aria-hidden="true"></i>Browse files
+              </button>
+              <input type="file" id="file-input" class="visually-hidden" multiple>
+            </div>
+
+            <div id="upload-status" class="mt-3 d-none" aria-live="polite">
+              <div id="upload-progress-wrap" class="progress d-none" role="progressbar" aria-label="Upload progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+              </div>
+              <p id="upload-status-text" class="small text-muted mb-0 mt-2"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-lg-5" aria-label="Recently uploaded files">
+        <div class="card shadow-sm h-100">
+          <div class="card-header bg-body d-flex align-items-center justify-content-between">
+            <h2 class="h6 mb-0">Recent files</h2>
+            <button type="button" id="refresh-btn" class="btn btn-sm btn-outline-secondary" aria-label="Refresh file list">
+              <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+            </button>
+          </div>
+          <ul id="file-list" class="list-group list-group-flush file-list"></ul>
+          <div id="empty-state" class="text-center text-muted py-5 px-3 d-none">
+            <i class="bi bi-inbox fs-1 d-block mb-2" aria-hidden="true"></i>
+            No files yet — upload something to get started.
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal fade" id="file-modal" tabindex="-1" aria-labelledby="file-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title fs-6 text-truncate" id="file-modal-title"></h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div id="preview-wrap" class="preview-wrap d-none">
+            <img id="preview-img" class="preview-img" alt="">
+            <a id="preview-download-btn" class="preview-download-btn" href="#" aria-label="Download this file">
+              <i class="bi bi-download" aria-hidden="true"></i>
+            </a>
+          </div>
+          <div id="preview-placeholder" class="preview-placeholder d-none">
+            <i id="placeholder-icon" class="bi bi-file-earmark" aria-hidden="true"></i>
+            <p class="text-muted small mb-0">No preview available for this file type</p>
+          </div>
+          <dl class="file-details row mb-0 mt-3">
+            <div class="col-sm-6">
+              <dt class="col-form-label-sm text-muted">Size</dt>
+              <dd id="detail-size" class="mb-2"></dd>
+            </div>
+            <div class="col-sm-6">
+              <dt class="col-form-label-sm text-muted">Type</dt>
+              <dd id="detail-type" class="mb-2 text-break"></dd>
+            </div>
+            <div class="col-12">
+              <dt class="col-form-label-sm text-muted">Uploaded</dt>
+              <dd id="detail-uploaded" class="mb-0"></dd>
+            </div>
+          </dl>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+          <a id="download-btn" class="btn btn-primary" href="#">
+            <i class="bi bi-download me-1" aria-hidden="true"></i>Download
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/bootstrap.bundle.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
