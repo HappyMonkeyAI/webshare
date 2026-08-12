@@ -17,8 +17,11 @@ npm start
 Then open **http://<server-address>:9000** from any device on the network.
 
 The server binds to `0.0.0.0` so all LAN devices can reach it. Make sure port
-3000 is allowed through the host firewall (e.g. `sudo ufw allow 3000/tcp` if
+9000 is allowed through the host firewall (e.g. `sudo ufw allow 9000/tcp` if
 UFW is enabled).
+
+Port 9000 is reserved for this project in the launcher registry
+(`[local launcher URL removed]`, live datastore at `[local launcher path removed]`).
 
 ## Configuration
 
@@ -26,11 +29,13 @@ Environment variables:
 
 | Variable      | Default            | Purpose                        |
 | ------------- | ------------------ | ------------------------------ |
-| `PORT`        | `3000`             | Port to listen on              |
+| `PORT`        | `9000` (via `.env`)| Port to listen on              |
 | `HOST`        | `0.0.0.0`          | Interface to bind              |
 | `UPLOAD_DIR`  | `./uploads`        | Where uploaded files are kept  |
 
-Example: `PORT=8080 npm start`
+`npm start` loads `.env` automatically; an exported `PORT` still overrides it
+(e.g. `PORT=8080 npm start`). If you change the port permanently, update the
+launcher registry entry too.
 
 ## Features
 

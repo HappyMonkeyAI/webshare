@@ -4,7 +4,7 @@
   "description": "Simple LAN file sharing: drag & drop uploads, previews, and downloads.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --env-file-if-exists=.env server.js",
     "test": "node test/frontend-smoke.mjs && node test/api.mjs"
   },
   "keywords": [],
