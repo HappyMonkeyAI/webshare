@@ -25,8 +25,12 @@
   const detailType = document.getElementById('detail-type');
   const detailUploaded = document.getElementById('detail-uploaded');
   const downloadBtn = document.getElementById('download-btn');
+  const deleteBtn = document.getElementById('delete-btn');
+  const prevFileBtn = document.getElementById('prev-file-btn');
+  const nextFileBtn = document.getElementById('next-file-btn');
 
   const filesById = new Map();
+  let currentId = null;
 
   function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
@@ -62,6 +66,34 @@
 
   function fileUrl(entry) {
     return `/api/files/${entry.id}`;
+  }
+
+  const mimeExtensions = {
+    'image/png': '.png',
+    'image/jpeg': '.jpg',
+    'image/gif': '.gif',
+    'image/webp': '.webp',
+    'image/svg+xml': '.svg',
+    'text/plain': '.txt',
+    'text/html': '.html',
+    'application/pdf': '.pdf',
+  };
+
+  function pasteFiles(e) {
+    const items = e.clipboardData && e.clipboardData.files;
+    if (!items || items.length === 0) return false;
+
+    e.preventDefault();
+    const files = Array.from(items).map((file, i) => {
+      if (file.name) return file;
+      const stamp = `${Date.now()}-${i + 1}`;
+      const kind = file.type.startsWith('image/') ? 'pasted-image' : 'pasted-file';
+      return new File([file], `${kind}-${stamp}${mimeExtensions[file.type] || ''}`, {
+        type: file.type,
+      });
+    });
+    uploadFiles(files);
+    return true;
   }
 
   async function loadList() {
@@ -126,17 +158,30 @@
       chevron.setAttribute('aria-hidden', 'true');
       button.appendChild(chevron);
 
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'file-delete-btn';
+      deleteButton.setAttribute('aria-label', `Delete ${entry.name}`);
+      deleteButton.title = 'Delete file';
+      const deleteIcon = document.createElement('i');
+      deleteIcon.className = 'bi bi-x-lg';
+      deleteIcon.setAttribute('aria-hidden', 'true');
+      deleteButton.appendChild(deleteIcon);
+      deleteButton.addEventListener('click', () => deleteFile(entry.id));
+
+      const row = document.createElement('div');
+      row.className = 'file-item-row';
+      row.appendChild(button);
+      row.appendChild(deleteButton);
+
       const li = document.createElement('li');
       li.className = 'list-group-item p-0';
-      li.appendChild(button);
+      li.appendChild(row);
       fileList.appendChild(li);
     }
   }
 
-  function openFile(id) {
-    const entry = filesById.get(id);
-    if (!entry) return;
-
+  function renderFile(entry) {
     modalTitle.textContent = entry.name;
     modalTitle.title = entry.name;
 
@@ -162,7 +207,62 @@
     detailType.textContent = entry.mime;
     detailUploaded.textContent = new Date(entry.uploadedAt).toLocaleString();
 
+    updateNav();
+  }
+
+  function openFile(id) {
+    const entry = filesById.get(id);
+    if (!entry) return;
+    currentId = id;
+    renderFile(entry);
     fileModal.show();
+  }
+
+  function orderedIds() {
+    return Array.from(filesById.keys());
+  }
+
+  function updateNav() {
+    const ids = orderedIds();
+    const idx = ids.indexOf(currentId);
+    prevFileBtn.disabled = idx <= 0;
+    nextFileBtn.disabled = idx === -1 || idx >= ids.length - 1;
+  }
+
+  function step(direction) {
+    const ids = orderedIds();
+    const idx = ids.indexOf(currentId);
+    const nextIdx = idx + direction;
+    if (nextIdx < 0 || nextIdx >= ids.length) return;
+    const entry = filesById.get(ids[nextIdx]);
+    if (!entry) return;
+    currentId = ids[nextIdx];
+    renderFile(entry);
+  }
+
+  async function deleteFile(id) {
+    const entry = filesById.get(id);
+    const name = entry ? entry.name : 'this file';
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+
+    let res;
+    try {
+      res = await fetch(`/api/files/${id}`, { method: 'DELETE' });
+    } catch {
+      window.alert('Could not delete the file. Please try again.');
+      return;
+    }
+    if (!res.ok) {
+      window.alert('Could not delete the file. Please try again.');
+      return;
+    }
+
+    filesById.delete(id);
+    if (id === currentId) {
+      currentId = null;
+      fileModal.hide();
+    }
+    renderList(Array.from(filesById.values()));
   }
 
   function setProgress(fraction) {
@@ -269,7 +369,33 @@
     }
   });
 
+  document.addEventListener('paste', (e) => {
+    pasteFiles(e);
+  });
+
   refreshBtn.addEventListener('click', loadList);
+
+  prevFileBtn.addEventListener('click', () => step(-1));
+  nextFileBtn.addEventListener('click', () => step(1));
+  deleteBtn.addEventListener('click', () => {
+    if (currentId) deleteFile(currentId);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (!fileModalEl.classList.contains('show')) return;
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      step(-1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      step(1);
+    }
+  });
+
+  if ('EventSource' in window) {
+    const events = new EventSource('/api/events');
+    events.addEventListener('files-changed', () => loadList());
+  }
 
   setInterval(() => {
     if (document.visibilityState === 'visible') {

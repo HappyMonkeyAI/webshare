@@ -29,6 +29,7 @@
             <div id="drop-zone" class="drop-zone flex-grow-1 d-flex flex-column align-items-center justify-content-center text-center" role="button" tabindex="0" aria-label="Upload files: drag and drop here, or press Enter to browse">
               <i class="bi bi-cloud-arrow-up drop-icon" aria-hidden="true"></i>
               <p class="lead mb-1">Drag &amp; drop files here</p>
+              <p class="text-muted small mb-1">or paste images &amp; files (Ctrl+V)</p>
               <p class="text-muted small mb-3">or</p>
               <button type="button" id="browse-btn" class="btn btn-primary">
                 <i class="bi bi-folder2-open me-1" aria-hidden="true"></i>Browse files
@@ -69,7 +70,15 @@
       <div class="modal-content">
         <div class="modal-header">
           <h2 class="modal-title fs-6 text-truncate" id="file-modal-title"></h2>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <div class="d-flex align-items-center gap-2 ms-auto">
+            <button type="button" id="prev-file-btn" class="btn btn-sm btn-outline-secondary modal-nav-btn" aria-label="Previous file" title="Previous file (Left arrow)">
+              <i class="bi bi-chevron-left" aria-hidden="true"></i>
+            </button>
+            <button type="button" id="next-file-btn" class="btn btn-sm btn-outline-secondary modal-nav-btn" aria-label="Next file" title="Next file (Right arrow)">
+              <i class="bi bi-chevron-right" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
         </div>
         <div class="modal-body">
           <div id="preview-wrap" class="preview-wrap d-none">
@@ -98,6 +107,9 @@
           </dl>
         </div>
         <div class="modal-footer">
+          <button type="button" id="delete-btn" class="btn btn-danger me-auto">
+            <i class="bi bi-trash me-1" aria-hidden="true"></i>Delete
+          </button>
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
           <a id="download-btn" class="btn btn-primary" href="#">
             <i class="bi bi-download me-1" aria-hidden="true"></i>Download

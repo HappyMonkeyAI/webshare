@@ -42,9 +42,16 @@ launcher registry entry too.
 - Drag & drop or click-to-browse uploads (multiple files at once), with a
   progress bar
 - Recent files list with thumbnails, sizes, and relative upload times
-  (auto-refreshes every 15 s so other people's uploads show up)
+  (auto-refreshes via Server-Sent Events the moment anyone uploads, so other
+  people's files appear without a manual reload; a 15 s poll acts as a fallback)
 - Click any file for details: image preview with a hover download button in
   the corner, plus a Download button with file info underneath
+- Use the left/right arrows (or arrow keys) in the details view to jump
+  between files and download them without returning to the list
+- Delete files from the list (red cross next to each name) or from the
+  details view (Delete button), with a confirmation prompt
+- Paste images or files from the clipboard (Ctrl+V) anywhere on the page to
+  upload them
 - Original filenames are preserved on download (including Unicode names)
 - Max upload size: 5 GB per file
 

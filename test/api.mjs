@@ -72,10 +72,65 @@ try {
   const traversalRes = await fetch(`${BASE}/api/files/..%2f..%2fserver.js`);
   assert.equal(traversalRes.status, 404, 'path traversal is rejected');
 
+  const delForm = new FormData();
+  delForm.append('files', new Blob([textContent], { type: 'text/plain' }), 'to-delete.txt');
+  const delUploadRes = await fetch(`${BASE}/api/files`, { method: 'POST', body: delForm });
+  assert.equal(delUploadRes.status, 201, 'delete-test upload succeeds');
+  const [toDelete] = await delUploadRes.json();
+
+  const delRes = await fetch(`${BASE}/api/files/${toDelete.id}`, { method: 'DELETE' });
+  assert.equal(delRes.status, 204, 'delete returns 204');
+  assert.equal(
+    await (await fetch(`${BASE}/api/files/${toDelete.id}`)).status,
+    404,
+    'deleted file no longer resolves'
+  );
+  const afterDelList = await (await fetch(`${BASE}/api/files`)).json();
+  assert.ok(
+    !afterDelList.some((f) => f.id === toDelete.id),
+    'deleted file is removed from the list'
+  );
+  const delMissingRes = await fetch(`${BASE}/api/files/${'0'.repeat(16)}`, { method: 'DELETE' });
+  assert.equal(delMissingRes.status, 404, 'deleting an unknown id returns 404');
+
   const emptyRes = await fetch(`${BASE}/api/files`, { method: 'POST', body: new FormData() });
   assert.equal(emptyRes.status, 400, 'empty upload is rejected');
 
-  console.log('PASS: api test — upload, list, preview, download, encoding, 404s');
+  const sseAbort = new AbortController();
+  const sseRes = await fetch(`${BASE}/api/events`, { signal: sseAbort.signal });
+  assert.equal(sseRes.status, 200, 'sse endpoint is reachable');
+  assert.match(sseRes.headers.get('content-type') || '', /text\/event-stream/, 'sse content type');
+
+  const sseReader = sseRes.body.getReader();
+  const decoder = new TextDecoder();
+  let sseText = '';
+  const sseRead = (async () => {
+    try {
+      for (;;) {
+        const { value, done } = await sseReader.read();
+        if (done) return;
+        sseText += decoder.decode(value, { stream: true });
+        if (sseText.includes('files-changed')) return;
+      }
+    } catch {
+      // aborted after the assertions below
+    }
+  })();
+
+  const sseForm = new FormData();
+  sseForm.append('files', new Blob([textContent], { type: 'text/plain' }), 'sse-notice.txt');
+  const sseUpload = await fetch(`${BASE}/api/files`, { method: 'POST', body: sseForm });
+  assert.equal(sseUpload.status, 201, 'upload after sse connect succeeds');
+
+  await Promise.race([
+    sseRead,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('SSE broadcast timed out')), 5000)),
+  ]);
+  sseAbort.abort();
+  assert.ok(sseText.includes('event: connected'), 'sse connection event received');
+  assert.ok(sseText.includes('event: files-changed'), 'sse files-changed event received');
+
+  console.log('PASS: api test — upload, list, preview, download, encoding, 404s, delete');
 } finally {
   server.kill('SIGTERM');
   rmSync(uploadDir, { recursive: true, force: true });
