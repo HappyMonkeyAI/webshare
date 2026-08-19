@@ -20,11 +20,14 @@ touches more than ~3 files, write the spec/report first (Agents Protocol §6).
 - Arrow-key and button navigation between files in the details view.
 - File delete from list and details view (server `DELETE` endpoint).
 - Clipboard paste (images and files) feeds the existing upload path.
+- Optional PIN lock (`APP_PIN` in `.env`): server-enforced API gate, lock
+  screen, logout — a convenience lock, not real auth (ADR-0004).
 
 ### Phase 3 — Hardening & polish (current)
 - [ ] Confirm the delete UX on the LAN from a second device.
 - [ ] Test uploads of very large files (progress bar, 5 GB limit path).
 - [ ] Decide on max list length / pruning policy for the index.
+- [ ] Verify PIN lock from a second device (fresh session, re-login after restart).
 - [ ] Sweep lint/type-check conventions into AGENTS.md if a linter is added.
 
 ### Phase 4 — Optional backlog (parked, not committed)

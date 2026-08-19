@@ -1,6 +1,6 @@
 # ADR-0003: No authentication — trusted LAN only
 
-Status: Active
+Status: Superseded by ADR-0004 (optional PIN lock)
 
 ## Context
 

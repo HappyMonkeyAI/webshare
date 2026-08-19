@@ -72,6 +72,13 @@ window.fetch = (url, opts = {}) => {
     deleteCalled = String(url);
     return Promise.resolve({ ok: true, status: 204 });
   }
+  if (String(url) === '/api/auth/status') {
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ enabled: false, authorized: true }),
+    });
+  }
   return Promise.resolve({
     ok: true,
     status: 200,
@@ -252,3 +259,85 @@ assert.equal(pasteForm.get('files').name, 'pasted.png', 'pasted file keeps its n
 
 window.close();
 console.log('PASS: frontend smoke test — list rendering, refresh, modal, previews, download links, delete, paste');
+
+let authed = false;
+let postedPins = [];
+let lockFetches = [];
+const lockDom = new JSDOM(html, {
+  url: 'http://localhost/',
+  runScripts: 'outside-only',
+  pretendToBeVisual: true,
+});
+const w2 = lockDom.window;
+
+w2.bootstrap = {
+  Modal: class {
+    show() {}
+    hide() {}
+  },
+};
+w2.confirm = () => true;
+w2.alert = () => {};
+w2.XMLHttpRequest = class {
+  constructor() {
+    this.upload = { addEventListener() {} };
+  }
+  open() {}
+  addEventListener() {}
+  send() {}
+};
+w2.fetch = (url, opts = {}) => {
+  lockFetches.push(String(url));
+  if (String(url) === '/api/auth/status') {
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ enabled: true, authorized: authed }),
+    });
+  }
+  if (String(url) === '/api/auth' && opts.method === 'POST') {
+    postedPins.push(JSON.parse(opts.body).pin);
+    authed = true;
+    return Promise.resolve({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ enabled: true, authorized: true }),
+    });
+  }
+  return Promise.resolve({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve(fixtures),
+  });
+};
+w2.eval(appJs);
+await new Promise((resolve) => w2.setTimeout(resolve, 50));
+
+const lockScreen = w2.document.getElementById('lock-screen');
+assert.ok(!lockScreen.classList.contains('d-none'), 'lock screen is shown when not authorized');
+assert.equal(
+  w2.document.getElementById('file-list').children.length,
+  0,
+  'file list is not loaded while locked'
+);
+
+const pinInput = w2.document.getElementById('pin-input');
+pinInput.value = '4242';
+w2.document
+  .getElementById('pin-form')
+  .dispatchEvent(new w2.Event('submit', { bubbles: true, cancelable: true }));
+await new Promise((resolve) => w2.setTimeout(resolve, 50));
+assert.deepEqual(postedPins, ['4242'], 'correct PIN is posted to /api/auth');
+assert.ok(lockScreen.classList.contains('d-none'), 'lock screen hides after a correct PIN');
+assert.equal(
+  w2.document.getElementById('file-list').children.length,
+  2,
+  'file list loads after unlocking'
+);
+assert.ok(
+  !w2.document.getElementById('lock-btn').classList.contains('d-none'),
+  'lock button is shown when a PIN is configured'
+);
+
+lockDom.window.close();
+console.log('PASS: frontend smoke test — PIN lock flow');

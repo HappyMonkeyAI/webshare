@@ -15,6 +15,14 @@ const server = spawn(process.execPath, [path.join(root, 'server.js')], {
   stdio: 'ignore',
 });
 
+const LOCK_PORT = 3124;
+const LOCK_BASE = `http://127.0.0.1:${LOCK_PORT}`;
+const lockDir = mkdtempSync(path.join(tmpdir(), 'webshare-lock-test-'));
+const lockServer = spawn(process.execPath, [path.join(root, 'server.js')], {
+  env: { ...process.env, PORT: String(LOCK_PORT), UPLOAD_DIR: lockDir, APP_PIN: '4242' },
+  stdio: 'ignore',
+});
+
 async function waitForServer() {
   for (let i = 0; i < 50; i += 1) {
     try {
@@ -25,6 +33,18 @@ async function waitForServer() {
     }
   }
   throw new Error('Server did not start in time');
+}
+
+async function waitForLockServer() {
+  for (let i = 0; i < 50; i += 1) {
+    try {
+      const res = await fetch(`${LOCK_BASE}/api/auth/status`);
+      if (res.ok) return;
+    } catch {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+  }
+  throw new Error('Lock server did not start in time');
 }
 
 try {
@@ -130,8 +150,66 @@ try {
   assert.ok(sseText.includes('event: connected'), 'sse connection event received');
   assert.ok(sseText.includes('event: files-changed'), 'sse files-changed event received');
 
-  console.log('PASS: api test — upload, list, preview, download, encoding, 404s, delete');
+  await waitForLockServer();
+  assert.equal((await fetch(`${LOCK_BASE}/api/files`)).status, 401, 'unauthenticated list is rejected');
+  const lockStatus = await (await fetch(`${LOCK_BASE}/api/auth/status`)).json();
+  assert.deepEqual(lockStatus, { enabled: true, authorized: false }, 'status reports locked without a session');
+
+  const wrongPin = await fetch(`${LOCK_BASE}/api/auth`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: '0000' }),
+  });
+  assert.equal(wrongPin.status, 401, 'wrong PIN is rejected');
+
+  const loginRes = await fetch(`${LOCK_BASE}/api/auth`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: '4242' }),
+  });
+  assert.equal(loginRes.status, 200, 'correct PIN unlocks');
+  const cookie = (loginRes.headers.get('set-cookie') || '').split(';')[0];
+  assert.match(cookie, /^webshare_session=[a-f0-9]{64}$/, 'session cookie is a hex token');
+  const authedHeaders = { Cookie: cookie };
+
+  const authedList = await fetch(`${LOCK_BASE}/api/files`, { headers: authedHeaders });
+  assert.equal(authedList.status, 200, 'authenticated list request succeeds');
+  const afterLoginStatus = await (
+    await fetch(`${LOCK_BASE}/api/auth/status`, { headers: authedHeaders })
+  ).json();
+  assert.deepEqual(afterLoginStatus, { enabled: true, authorized: true }, 'status reports authorized with a session');
+
+  const lockForm = new FormData();
+  lockForm.append('files', new Blob([textContent], { type: 'text/plain' }), 'locked.txt');
+  const lockedUpload = await fetch(`${LOCK_BASE}/api/files`, {
+    method: 'POST',
+    body: lockForm,
+    headers: authedHeaders,
+  });
+  assert.equal(lockedUpload.status, 201, 'authenticated upload succeeds');
+  const [lockedFile] = await lockedUpload.json();
+  const lockedDownload = await fetch(`${LOCK_BASE}/api/files/${lockedFile.id}?download=1`, {
+    headers: authedHeaders,
+  });
+  assert.equal(lockedDownload.status, 200, 'authenticated download succeeds');
+  assert.equal(
+    (await fetch(`${LOCK_BASE}/api/files/${lockedFile.id}?download=1`)).status,
+    401,
+    'unauthenticated download is rejected'
+  );
+
+  const logoutRes = await fetch(`${LOCK_BASE}/api/auth/logout`, {
+    method: 'POST',
+    headers: authedHeaders,
+  });
+  assert.equal(logoutRes.status, 200, 'logout succeeds');
+  const afterLogout = await (await fetch(`${LOCK_BASE}/api/auth/status`)).json();
+  assert.deepEqual(afterLogout, { enabled: true, authorized: false }, 'session is invalidated by logout');
+
+  console.log('PASS: api test — upload, list, preview, download, encoding, 404s, delete, pin lock');
 } finally {
   server.kill('SIGTERM');
+  lockServer.kill('SIGTERM');
   rmSync(uploadDir, { recursive: true, force: true });
+  rmSync(lockDir, { recursive: true, force: true });
 }

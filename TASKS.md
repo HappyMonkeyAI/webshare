@@ -16,6 +16,7 @@ PLAN.md backlog into here when they become actionable.
 - [x] Arrow-key / button navigation between files in details view.
 - [x] Delete from list (red cross) and details view (Delete button), with confirmation.
 - [x] Clipboard paste (Ctrl+V) uploads images and files.
+- [x] Optional PIN lock (`APP_PIN` in `.env`): server-enforced gate over all API routes with lock screen UI and logout.
 - [x] Non-ASCII and Unicode-safe filenames on download (RFC 5987).
 - [x] 5 GB per-file upload limit.
 - [x] Path-traversal and unknown-id rejection.

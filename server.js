@@ -8,6 +8,10 @@ const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(__dirname, 'uploads');
 const INDEX_FILE = path.join(UPLOAD_DIR, 'index.json');
+const APP_PIN = process.env.APP_PIN || '';
+
+const SESSION_COOKIE = 'webshare_session';
+const sessions = new Set();
 
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
@@ -47,7 +51,67 @@ const upload = multer({
 });
 
 const app = express();
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+
+function parseCookies(header = '') {
+  const cookies = {};
+  for (const part of header.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx === -1) continue;
+    cookies[part.slice(0, idx).trim()] = decodeURIComponent(part.slice(idx + 1).trim());
+  }
+  return cookies;
+}
+
+function pinMatches(input) {
+  if (typeof input !== 'string' || !APP_PIN) return false;
+  const a = crypto.createHash('sha256').update(APP_PIN).digest();
+  const b = crypto.createHash('sha256').update(input).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
+function sessionToken(req) {
+  return parseCookies(req.headers.cookie)[SESSION_COOKIE] || '';
+}
+
+const PUBLIC_AUTH_PATHS = new Set(['/auth', '/auth/status', '/auth/logout']);
+app.use('/api', (req, res, next) => {
+  if (!APP_PIN || PUBLIC_AUTH_PATHS.has(req.path)) return next();
+  if (sessions.has(sessionToken(req))) return next();
+  return res.status(401).json({ error: 'Authentication required.' });
+});
+
+app.get('/api/auth/status', (req, res) => {
+  const token = sessionToken(req);
+  res.json({
+    enabled: Boolean(APP_PIN),
+    authorized: !APP_PIN || sessions.has(token),
+  });
+});
+
+app.post('/api/auth', (req, res) => {
+  if (!APP_PIN) return res.json({ enabled: false, authorized: true });
+  if (!pinMatches(req.body && req.body.pin)) {
+    return res.status(401).json({ error: 'Invalid PIN.' });
+  }
+  const token = crypto.randomBytes(32).toString('hex');
+  sessions.add(token);
+  res.setHeader(
+    'Set-Cookie',
+    `${SESSION_COOKIE}=${token}; HttpOnly; SameSite=Lax; Path=/`
+  );
+  res.json({ enabled: true, authorized: true });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  sessions.delete(sessionToken(req));
+  res.setHeader(
+    'Set-Cookie',
+    `${SESSION_COOKIE}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`
+  );
+  res.json({ enabled: Boolean(APP_PIN), authorized: false });
+});
 
 function publicMeta(entry) {
   return {

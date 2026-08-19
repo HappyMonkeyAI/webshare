@@ -45,13 +45,19 @@ No build step, no bundler, no TypeScript.
    id; `index.json` holds metadata. Simple, no DB, easy to inspect/reset.
 2. **SSE + poll fallback for live updates** (`ADR-0002`): push on change,
    15 s poll as safety net; keeps all clients in sync across devices.
-3. **No authentication — trusted LAN only** (`ADR-0003`): explicitly out of
-   scope; revisit only if the app leaves the LAN.
+3. **Optional PIN lock via `.env`** (`ADR-0004`): when `APP_PIN` is set, every
+   `/api/*` route requires a memory-held session cookie; the client shows a
+   lock screen. Supersedes the old "no auth at all" stance (ADR-0003).
+4. **No user accounts — trusted LAN only** (`ADR-0003`, superseded): the PIN
+   gate is a convenience lock, not real authentication.
 
 ## What NOT to do
 
-- Do **not** add auth, users, or encryption "to be safe" — it's a trusted-LAN
-  tool by design (see ADR-0003).
+- Do **not** add user accounts, roles, or real authentication. The only access
+  control is the optional `APP_PIN` gate (see ADR-0004); a PIN is a
+  convenience lock, not security — never market it as auth.
+- Do **not** put secrets or the PIN in tracked files; `.env` is gitignored
+  (it was untracked to avoid committing the PIN). Use `.env.example` for docs.
 - Do **not** add a database, ORM, or cache. `index.json` is the datastore.
 - Do **not** introduce a build step or bundler; the frontend is plain JS.
 - Do **not** re-invent upload handling: Multer is already wired with a 5 GB

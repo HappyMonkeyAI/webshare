@@ -32,10 +32,14 @@ Environment variables:
 | `PORT`        | `9000` (via `.env`)| Port to listen on              |
 | `HOST`        | `0.0.0.0`          | Interface to bind              |
 | `UPLOAD_DIR`  | `./uploads`        | Where uploaded files are kept  |
+| `APP_PIN`     | *(unset)*          | Optional PIN lock. Set to e.g. `1234` to require a PIN before the list, details, downloads, or uploads are accessible |
 
 `npm start` loads `.env` automatically; an exported `PORT` still overrides it
 (e.g. `PORT=8080 npm start`). If you change the port permanently, update the
 launcher registry entry too.
+
+See `.env.example` for a template. **`.env` is not tracked in git** — set your
+PIN there, not in a committed file.
 
 ## Features
 
@@ -52,6 +56,8 @@ launcher registry entry too.
   details view (Delete button), with a confirmation prompt
 - Paste images or files from the clipboard (Ctrl+V) anywhere on the page to
   upload them
+- Optional PIN lock: set `APP_PIN` in `.env` and visitors must enter it
+  before the file list, details, downloads, or uploads are accessible
 - Original filenames are preserved on download (including Unicode names)
 - Max upload size: 5 GB per file
 
@@ -66,6 +72,9 @@ an end-to-end API test against a throwaway server instance.
 
 ## Notes
 
-- No authentication — intended for trusted local networks only.
+- No user accounts — intended for trusted local networks only. An optional
+  `APP_PIN` gate (see Configuration) is a convenience lock, not strong auth;
+  use it to keep casual visitors out, not to protect against a determined
+  attacker. Sessions are memory-only and cleared on restart.
 - Uploaded files live in `uploads/` with an `index.json` metadata index.
   Deleting both restores a fresh state.

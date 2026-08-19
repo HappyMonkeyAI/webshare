@@ -18,7 +18,8 @@ static single-page frontend.
 
 ## Non-goals
 
-- Authentication, user accounts, or authorization (trusted LAN only).
+- User accounts, roles, or real authentication (trusted LAN only). The
+  optional `APP_PIN` gate is a convenience lock, not security.
 - Multi-node sync or a database (metadata lives in `uploads/index.json`).
 - Editing, renaming, or sharing links per-file.
 - Any cloud storage or persistence beyond the uploads directory.
@@ -37,6 +38,7 @@ static single-page frontend.
 | F8 | Navigate between files in the details view with buttons or arrow keys. |
 | F9 | Report upload progress and errors to the user. |
 | F10 | Survive a restart: index and files persist on disk. |
+| F11 | Optional PIN lock: when `APP_PIN` is set in `.env`, require a correct PIN before list, details, downloads, uploads, or SSE are accessible; show a lock screen until unlocked. |
 
 ## API surface
 
@@ -46,9 +48,17 @@ static single-page frontend.
 | GET | `/api/files` | List files newest-first | 200 + metadata array |
 | GET | `/api/files/:id` | Serve file; `?download=1` for attachment | 200 stream |
 | DELETE | `/api/files/:id` | Delete index entry + disk file | 204 |
+| GET | `/api/auth/status` | `{ enabled, authorized }` (always public) | 200 |
+| POST | `/api/auth` | Unlock with `{ "pin": "…" }`; sets session cookie | 200 |
+| POST | `/api/auth/logout` | Invalidate session, clear cookie | 200 |
 | GET | `/api/events` | SSE stream (`files-changed`, heartbeat) | 200 |
 
 File metadata: `id`, `name`, `size`, `mime`, `uploadedAt`, `isImage`.
+
+When `APP_PIN` is set, all `/api/*` routes except the three `/api/auth*`
+paths require a valid `webshare_session` cookie (401 otherwise). When unset,
+auth is disabled entirely and `/api/auth/status` reports
+`{ enabled: false, authorized: true }`.
 
 ## Non-functional requirements
 

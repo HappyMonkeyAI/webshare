@@ -195,3 +195,31 @@
   display: block;
   margin-bottom: 0.5rem;
 }
+
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background-color: var(--bs-body-bg);
+}
+
+.lock-card {
+  width: 100%;
+  max-width: 22rem;
+  border-radius: 1rem;
+}
+
+.lock-icon {
+  font-size: 3rem;
+  color: var(--bs-primary);
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.pin-input {
+  max-width: 10rem;
+}

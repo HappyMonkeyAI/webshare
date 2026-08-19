@@ -29,8 +29,46 @@
   const prevFileBtn = document.getElementById('prev-file-btn');
   const nextFileBtn = document.getElementById('next-file-btn');
 
+  const lockScreen = document.getElementById('lock-screen');
+  const pinForm = document.getElementById('pin-form');
+  const pinInput = document.getElementById('pin-input');
+  const pinError = document.getElementById('pin-error');
+  const lockBtn = document.getElementById('lock-btn');
+
   const filesById = new Map();
   let currentId = null;
+  let locked = true;
+  let pinEnabled = false;
+
+  function showLock() {
+    locked = true;
+    fileModal.hide();
+    lockScreen.classList.remove('d-none');
+    pinInput.focus();
+  }
+
+  function hideLock() {
+    locked = false;
+    lockScreen.classList.add('d-none');
+    pinError.classList.add('d-none');
+  }
+
+  async function checkAuth() {
+    try {
+      const res = await fetch('/api/auth/status');
+      const data = res.ok ? await res.json() : null;
+      pinEnabled = Boolean(data && data.enabled);
+      if (data && data.authorized) {
+        hideLock();
+        lockBtn.classList.toggle('d-none', !pinEnabled);
+        return true;
+      }
+    } catch {
+      /* network failure — fall through to lock */
+    }
+    showLock();
+    return false;
+  }
 
   function formatBytes(bytes) {
     if (bytes === 0) return '0 B';
@@ -80,6 +118,7 @@
   };
 
   function pasteFiles(e) {
+    if (locked) return false;
     const items = e.clipboardData && e.clipboardData.files;
     if (!items || items.length === 0) return false;
 
@@ -99,6 +138,10 @@
   async function loadList() {
     try {
       const res = await fetch('/api/files');
+      if (res.status === 401) {
+        showLock();
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const files = await res.json();
       filesById.clear();
@@ -252,6 +295,10 @@
       window.alert('Could not delete the file. Please try again.');
       return;
     }
+    if (res.status === 401) {
+      showLock();
+      return;
+    }
     if (!res.ok) {
       window.alert('Could not delete the file. Please try again.');
       return;
@@ -364,6 +411,7 @@
   dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropZone.classList.remove('drag-over');
+    if (locked) return;
     if (e.dataTransfer && e.dataTransfer.files.length > 0) {
       uploadFiles(e.dataTransfer.files);
     }
@@ -392,30 +440,74 @@
     }
   });
 
-  if ('EventSource' in window) {
-    const events = new EventSource('/api/events');
-    events.addEventListener('files-changed', () => loadList());
-  }
-
-  setInterval(() => {
-    if (document.visibilityState === 'visible') {
-      const currentNames = Array.from(fileList.querySelectorAll('.file-name'))
-        .map((el) => el.textContent)
-        .join('\n');
-      fetch('/api/files')
-        .then((res) => (res.ok ? res.json() : null))
-        .then((files) => {
-          if (!files) return;
-          const incoming = files.map((f) => f.name).join('\n');
-          if (incoming !== currentNames || files.length !== fileList.children.length) {
-            filesById.clear();
-            files.forEach((f) => filesById.set(f.id, f));
-            renderList(files);
-          }
-        })
-        .catch(() => {});
+pinForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    pinError.classList.add('d-none');
+    const pin = pinInput.value;
+    if (!pin) return;
+    try {
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      if (res.ok) {
+        pinInput.value = '';
+        pinEnabled = true;
+        hideLock();
+        lockBtn.classList.remove('d-none');
+        loadList();
+        return;
+      }
+    } catch {
+      /* fall through to error */
     }
+    pinError.classList.remove('d-none');
+    pinInput.value = '';
+    pinInput.focus();
+  });
+
+  lockBtn.addEventListener('click', async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch {
+      /* lock regardless */
+    }
+    lockBtn.classList.add('d-none');
+    showLock();
+  });
+
+  const pollTimer = setInterval(() => {
+    if (locked) return;
+    if (document.visibilityState !== 'visible') return;
+    const currentNames = Array.from(fileList.querySelectorAll('.file-name'))
+      .map((el) => el.textContent)
+      .join('\n');
+    fetch('/api/files')
+      .then((res) => {
+        if (res.status === 401) showLock();
+        return res.ok ? res.json() : null;
+      })
+      .then((files) => {
+        if (!files || locked) return;
+        const incoming = files.map((f) => f.name).join('\n');
+        if (incoming !== currentNames || files.length !== fileList.children.length) {
+          filesById.clear();
+          files.forEach((f) => filesById.set(f.id, f));
+          renderList(files);
+        }
+      })
+      .catch(() => {});
   }, 15000);
 
-  loadList();
+  async function init() {
+    if (!(await checkAuth())) return;
+    if ('EventSource' in window) {
+      const events = new EventSource('/api/events');
+      events.addEventListener('files-changed', () => loadList());
+    }
+    loadList();
+  }
+
+  init();
 })();
