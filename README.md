@@ -14,14 +14,13 @@ npm install
 npm start
 ```
 
-Then open **http://<server-address>:9000** from any device on the network.
+Then open `http://<server-address>:9000` from another device on the same
+network, replacing `<server-address>` with the address of the machine running
+WebShare.
 
 The server binds to `0.0.0.0` so all LAN devices can reach it. Make sure port
 9000 is allowed through the host firewall (e.g. `sudo ufw allow 9000/tcp` if
 UFW is enabled).
-
-Port 9000 is reserved for this project in the launcher registry
-(`[local launcher URL removed]`, live datastore at `[local launcher path removed]`).
 
 ## Configuration
 
@@ -35,8 +34,7 @@ Environment variables:
 | `APP_PIN`     | *(unset)*          | Optional PIN lock. Set to e.g. `1234` to require a PIN before the list, details, downloads, or uploads are accessible |
 
 `npm start` loads `.env` automatically; an exported `PORT` still overrides it
-(e.g. `PORT=8080 npm start`). If you change the port permanently, update the
-launcher registry entry too.
+(e.g. `PORT=8080 npm start`).
 
 See `.env.example` for a template. **`.env` is not tracked in git** — set your
 PIN there, not in a committed file.

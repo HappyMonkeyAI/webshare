@@ -21,7 +21,7 @@ A manual refresh was not acceptable; changes must appear without user action.
 - Cross-device updates appear within milliseconds; polls cover the gaps.
 - SSE is same-origin, so no CORS/auth plumbing needed on the LAN.
 - Every future mutation of the index must remember to broadcast — this is
-  the project's #1 "blast radius" rule (see AGENTS.md [Ripple]).
+  every index mutation must broadcast the update so connected clients stay in sync.
 
 ## Alternatives
 

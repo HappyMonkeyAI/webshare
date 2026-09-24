@@ -1,7 +1,7 @@
 # WebShare — Project Context
 
-For humans and agents. Read this (plus README.md and AGENTS.md) at the start
-of any session. Keep it in sync with the code.
+For humans and contributors. Read this (plus README.md) at the start of a
+task. Keep it in sync with the code.
 
 ## What this is
 
@@ -37,7 +37,7 @@ No build step, no bundler, no TypeScript.
 - `public/vendor/` — vendored Bootstrap/bootstrap-icons assets.
 - `uploads/` — file blobs (id = filename) + `index.json` metadata.
 - `test/` — `api.mjs`, `frontend-smoke.mjs`.
-- `.agent/`, `docs/adr/`, `research/` — agents-protocol infrastructure.
+- `docs/adr/` — architecture decision records.
 
 ## Architecture decisions (details in `docs/adr/`)
 
@@ -65,8 +65,6 @@ No build step, no bundler, no TypeScript.
 - Do **not** break the SSE contract: every index mutation must `broadcast('files-changed', ...)`.
 - Do **not** trust raw ids: `findEntry` only accepts `/^[a-f0-9]{16}$/`.
 - Do **not** disable or gut the test suite; keep `npm test` green.
-- Port 9000 is reserved in the launcher registry — coordinate port changes
-  there (`[local launcher URL removed]`).
 
 ## Known constraints / gotchas
 

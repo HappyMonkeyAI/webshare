@@ -5,8 +5,7 @@ Status: Living. Update as scope changes.
 ## Direction
 
 Keep WebShare a small, dependency-light, single-node LAN file sharer. Avoid
-feature creep that adds state, accounts, or network complexity. When a change
-touches more than ~3 files, write the spec/report first (Agents Protocol §6).
+feature creep that adds state, accounts, or network complexity.
 
 ## Phases
 
@@ -28,7 +27,7 @@ touches more than ~3 files, write the spec/report first (Agents Protocol §6).
 - [ ] Test uploads of very large files (progress bar, 5 GB limit path).
 - [ ] Decide on max list length / pruning policy for the index.
 - [ ] Verify PIN lock from a second device (fresh session, re-login after restart).
-- [ ] Sweep lint/type-check conventions into AGENTS.md if a linter is added.
+- [ ] Add lint/type-check tooling if the project grows enough to benefit.
 
 ### Phase 4 — Optional backlog (parked, not committed)
 - Per-file share links / QR codes.
@@ -37,7 +36,5 @@ touches more than ~3 files, write the spec/report first (Agents Protocol §6).
 
 ## Working agreements
 
-- Feature branches `ag/...`, Conventional Commits, commit on green tests
-  (Ratchet).
 - Verify before done; run `npm test` on every change.
 - Keep README, SPEC, CONTEXT, and ADRs in sync with code.

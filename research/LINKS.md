@@ -5,7 +5,6 @@ it's an observation that saves future time.
 
 | Topic | URL | License | Stack | Take / avoid |
 | ----- | --- | ------- | ----- | ------------ |
-| Agents Protocol | https://github.com/HappyMonkeyAI/AgentsProtocol | MIT | prompts, `.agent/` | Adopted (adapted) as `AGENTS.md`; use the safe parts, keep docs in sync |
 | Express 5 | https://expressjs.com/ | MIT | Node HTTP | Routing + middleware as used in `server.js`; keep final error handler |
 | Multer 2 | https://github.com/expressjs/multer | MIT | multipart | Handles uploads; latin1 filenames need UTF-8 re-decode |
 | Server-Sent Events | https://developer.mozilla.org/en-US/docs/Web/API/Server-Sent_Events | CC-BY-SA | web | Push pattern for `/api/events`; heartbeat + reconnect fallback |
