@@ -5,7 +5,7 @@ share the URL, and anyone on the LAN can preview and download them.
 
 ## Requirements
 
-- Node.js 18+ (tested on Node 22)
+- Node.js 22.9+ (tested on Node 22)
 
 ## Quick start
 

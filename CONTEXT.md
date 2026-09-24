@@ -14,7 +14,7 @@ accounts, no cloud.
 
 | Layer | Choice |
 | ----- | ------ |
-| Runtime | Node.js 18+ (tested on 22) |
+| Runtime | Node.js 22.9+ (tested on 22) |
 | Server | Express 5, Multer 2 (multipart), plain `fs` |
 | Frontend | Vanilla JS (IIFE, no build step), Bootstrap 5, bootstrap-icons |
 | Transport | Fetch/XHR, Server-Sent Events (`/api/events`) |

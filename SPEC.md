@@ -62,7 +62,7 @@ auth is disabled entirely and `/api/auth/status` reports
 
 ## Non-functional requirements
 
-- Node.js 18+ (tested on 22); Express 5, Multer, vanilla JS + Bootstrap 5.
+- Node.js 22.9+ (tested on 22); Express 5, Multer, vanilla JS + Bootstrap 5.
 - Bind `0.0.0.0`, port 9000 by default; `HOST` and `PORT` can be configured.
 - Ids are 16-hex random tokens; reject anything else (path-traversal safe).
 - Errors: JSON `{ "error": "..." }` with 4xx/5xx as appropriate.

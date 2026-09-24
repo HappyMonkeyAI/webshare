@@ -7,6 +7,9 @@
     "start": "node --env-file-if-exists=.env server.js",
     "test": "node test/frontend-smoke.mjs && node test/api.mjs"
   },
+  "engines": {
+    "node": ">=22.9.0"
+  },
   "keywords": [],
   "author": "",
   "license": "MIT",
